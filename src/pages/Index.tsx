@@ -1,13 +1,42 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState } from 'react';
+import { LanguageProvider } from '@/contexts/LanguageContext';
+import { Navigation } from '@/components/Navigation';
+import { Dashboard } from '@/components/Dashboard';
+import { ProductCatalog } from '@/components/ProductCatalog';
+import { OrderManagement } from '@/components/OrderManagement';
+import { AdminDashboard } from '@/components/AdminDashboard';
 
 const Index = () => {
+  const [activeSection, setActiveSection] = useState('dashboard');
+
+  const renderActiveSection = () => {
+    switch (activeSection) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'products':
+        return <ProductCatalog />;
+      case 'orders':
+        return <OrderManagement />;
+      case 'admin':
+        return <AdminDashboard />;
+      default:
+        return <Dashboard />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <LanguageProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Navigation 
+          activeSection={activeSection} 
+          setActiveSection={setActiveSection} 
+        />
+        <main className="pb-6">
+          {renderActiveSection()}
+        </main>
       </div>
-    </div>
+    </LanguageProvider>
   );
 };
 
