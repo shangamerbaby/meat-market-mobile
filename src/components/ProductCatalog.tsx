@@ -5,117 +5,78 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ShoppingCart, Package } from 'lucide-react';
+import { ShoppingCart, Package, Loader2 } from 'lucide-react';
+import { useProducts } from '@/hooks/useProducts';
+import { useCategories } from '@/hooks/useCategories';
+import type { Product } from '@/hooks/useProducts';
 
 export const ProductCatalog = () => {
-  const { t, currency } = useLanguage();
-  const [cart, setCart] = useState<any[]>([]);
+  const { t, currency, language } = useLanguage();
+  const [cart, setCart] = useState<Product[]>([]);
+  const { data: products, isLoading: productsLoading } = useProducts();
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
 
-  const products = {
-    mutton: [
-      {
-        id: 'mutton-leg',
-        name: `${t('category.mutton')} ${t('cut.leg')}`,
-        price: { USD: 25.99, MYR: 110.50 },
-        image: 'photo-1493962853295-0fd70327578a',
-        description: 'Premium quality mutton leg, perfect for slow cooking',
-        stock: 15
-      },
-      {
-        id: 'mutton-shoulder',
-        name: `${t('category.mutton')} ${t('cut.shoulder')}`,
-        price: { USD: 22.50, MYR: 95.75 },
-        image: 'photo-1618160702438-9b02ab6515c9',
-        description: 'Tender shoulder cut, ideal for roasting',
-        stock: 12
-      }
-    ],
-    chicken: [
-      {
-        id: 'chicken-breast',
-        name: `${t('category.chicken')} ${t('cut.breast')}`,
-        price: { USD: 12.99, MYR: 55.25 },
-        image: 'photo-1465379944081-7f47de8d74ac',
-        description: 'Lean and tender chicken breast, hormone-free',
-        stock: 25
-      },
-      {
-        id: 'chicken-thigh',
-        name: `${t('category.chicken')} ${t('cut.thigh')}`,
-        price: { USD: 10.75, MYR: 45.75 },
-        image: 'photo-1452378174528-3090a4bba7b2',
-        description: 'Juicy chicken thighs with skin',
-        stock: 30
-      },
-      {
-        id: 'chicken-leg',
-        name: `${t('category.chicken')} ${t('cut.leg')}`,
-        price: { USD: 8.99, MYR: 38.25 },
-        image: 'photo-1465379944081-7f47de8d74ac',
-        description: 'Fresh chicken legs, perfect for grilling',
-        stock: 20
-      }
-    ],
-    beef: [
-      {
-        id: 'beef-belly',
-        name: `${t('category.beef')} ${t('cut.belly')}`,
-        price: { USD: 28.50, MYR: 121.25 },
-        image: 'photo-1493962853295-0fd70327578a',
-        description: 'Marbled beef belly, excellent for BBQ',
-        stock: 8
-      },
-      {
-        id: 'beef-ribs',
-        name: `${t('category.beef')} ${t('cut.ribs')}`,
-        price: { USD: 32.99, MYR: 140.25 },
-        image: 'photo-1618160702438-9b02ab6515c9',
-        description: 'Premium beef ribs, slow-cooked perfection',
-        stock: 10
-      }
-    ]
-  };
-
-  const addToCart = (product: any) => {
+  const addToCart = (product: Product) => {
     setCart([...cart, product]);
-    console.log('Added to cart:', product.name);
+    console.log('Added to cart:', product.name_en);
   };
 
-  const ProductCard = ({ product }: { product: any }) => (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div className="aspect-video bg-gray-100 relative overflow-hidden">
-        <img 
-          src={`https://images.unsplash.com/${product.image}?w=400&h=240&fit=crop`}
-          alt={product.name}
-          className="w-full h-full object-cover"
-        />
-        <Badge className="absolute top-2 right-2 bg-emerald-600">
-          {product.stock} in stock
-        </Badge>
-      </div>
-      <CardHeader>
-        <CardTitle className="text-lg">{product.name}</CardTitle>
-        <p className="text-sm text-gray-600">{product.description}</p>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-emerald-600">
-              {currency === 'USD' ? '$' : 'RM'}{product.price[currency]}
-            </p>
-            <p className="text-sm text-gray-500">per kg</p>
-          </div>
-          <Button 
-            onClick={() => addToCart(product)}
-            className="bg-emerald-600 hover:bg-emerald-700"
-          >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            {t('general.addToCart')}
-          </Button>
+  const getProductsByCategory = (categoryCode: string) => {
+    return products?.filter(product => product.category.code === categoryCode) || [];
+  };
+
+  const ProductCard = ({ product }: { product: Product }) => {
+    const productName = language === 'en' ? product.name_en : product.name_ms;
+    const description = language === 'en' ? product.description_en : product.description_ms;
+    const price = currency === 'USD' ? product.price_usd : product.price_myr;
+
+    return (
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+        <div className="aspect-video bg-gray-100 relative overflow-hidden">
+          <img 
+            src={product.image_url || `https://images.unsplash.com/photo-1493962853295-0fd70327578a?w=400&h=240&fit=crop`}
+            alt={productName}
+            className="w-full h-full object-cover"
+          />
+          <Badge className="absolute top-2 right-2 bg-emerald-600">
+            {product.stock_quantity} in stock
+          </Badge>
         </div>
-      </CardContent>
-    </Card>
-  );
+        <CardHeader>
+          <CardTitle className="text-lg">{productName}</CardTitle>
+          {description && (
+            <p className="text-sm text-gray-600">{description}</p>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-2xl font-bold text-emerald-600">
+                {currency === 'USD' ? '$' : 'RM'}{price}
+              </p>
+              <p className="text-sm text-gray-500">per kg</p>
+            </div>
+            <Button 
+              onClick={() => addToCart(product)}
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={product.stock_quantity === 0}
+            >
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              {t('general.addToCart')}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  if (productsLoading || categoriesLoading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
@@ -131,36 +92,30 @@ export const ProductCatalog = () => {
         )}
       </div>
 
-      <Tabs defaultValue="mutton" className="w-full">
+      <Tabs defaultValue={categories?.[0]?.code || 'mutton'} className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-6">
-          <TabsTrigger value="mutton">{t('category.mutton')}</TabsTrigger>
-          <TabsTrigger value="chicken">{t('category.chicken')}</TabsTrigger>
-          <TabsTrigger value="beef">{t('category.beef')}</TabsTrigger>
+          {categories?.map((category) => (
+            <TabsTrigger key={category.code} value={category.code}>
+              {language === 'en' ? category.name_en : category.name_ms}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        <TabsContent value="mutton" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.mutton.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="chicken" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.chicken.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="beef" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.beef.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </TabsContent>
+        {categories?.map((category) => (
+          <TabsContent key={category.code} value={category.code} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {getProductsByCategory(category.code).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            {getProductsByCategory(category.code).length === 0 && (
+              <div className="text-center py-12">
+                <Package className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-500">No products available in this category</p>
+              </div>
+            )}
+          </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
